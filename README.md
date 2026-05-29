@@ -1,5 +1,15 @@
 # AI-Powered Threat Modeling (AITM)
 
+<p align="center">
+  <img src="https://img.shields.io/badge/AI-Threat_Modeling-blue?style=for-the-badge&logo=openai&logoColor=white" alt="AI Threat Modeling"/>
+  <br/><br/>
+  <img src="https://img.shields.io/badge/STRIDE-Analysis-purple?style=flat-square" alt="STRIDE"/>
+  <img src="https://img.shields.io/badge/Bedrock-Claude-orange?style=flat-square" alt="Bedrock"/>
+  <img src="https://img.shields.io/badge/OpenAI-GPT--4o-green?style=flat-square" alt="OpenAI"/>
+  <img src="https://img.shields.io/badge/Ollama-Local-gray?style=flat-square" alt="Ollama"/>
+  <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="License"/>
+</p>
+
 > ⚠️ **This is a free demo version.** For the enterprise edition with advanced features, contact: **ai.security.tools@gmail.com**
 
 **Automated STRIDE threat analysis for system architectures — powered by LLMs.**
