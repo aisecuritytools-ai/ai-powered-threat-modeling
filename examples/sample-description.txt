@@ -1,0 +1,30 @@
+E-Commerce Platform Architecture
+
+The system is a cloud-native e-commerce platform deployed on AWS.
+
+Components:
+- React Single Page Application (SPA) served via CloudFront CDN
+- API Gateway (REST) with rate limiting and API key validation
+- Authentication service using Keycloak (OIDC/OAuth2)
+- Order Service (Node.js microservice on ECS Fargate)
+- Payment Service (Java microservice on ECS Fargate) — PCI DSS compliant
+- Product Catalog Service (Python FastAPI on Lambda)
+- PostgreSQL database (RDS) for orders and user data
+- Redis cache (ElastiCache) for session management and product catalog
+- S3 bucket for product images and static assets
+- SQS queue for async order processing
+- SNS for email/SMS notifications
+
+Data flows:
+- Users authenticate via Keycloak, receive JWT tokens
+- SPA calls API Gateway with Bearer tokens
+- API Gateway routes to backend services
+- Order Service writes to PostgreSQL and publishes to SQS
+- Payment Service integrates with Stripe API (external)
+- All inter-service communication uses mTLS
+
+Trust boundaries:
+- Public Internet (CDN, API Gateway)
+- DMZ (API Gateway, WAF)
+- Internal Network (microservices, databases)
+- External (Stripe, email providers)
