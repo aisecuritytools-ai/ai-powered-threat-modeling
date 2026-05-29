@@ -1,0 +1,210 @@
+{
+  "summary": "Threat model for system with 11 assets, 14 data flows, and 18 identified threats.",
+  "assets": [
+    {
+      "name": "React SPA",
+      "type": "web_app",
+      "description": "Single page application serving the e-commerce storefront to end users",
+      "trust_boundary": "Public Internet"
+    },
+    {
+      "name": "CloudFront CDN",
+      "type": "cdn",
+      "description": "Content delivery network caching static assets and routing requests",
+      "trust_boundary": "Public Internet"
+    },
+    {
+      "name": "API Gateway",
+      "type": "api",
+      "description": "REST API gateway handling request routing, rate limiting, and API key validation",
+      "trust_boundary": "DMZ"
+    },
+    {
+      "name": "Keycloak",
+      "type": "identity_provider",
+      "description": "OpenID Connect identity provider managing user authentication and JWT issuance",
+      "trust_boundary": "DMZ"
+    },
+    {
+      "name": "Order Service",
+      "type": "container",
+      "description": "Node.js microservice handling order creation, updates, and fulfillment",
+      "trust_boundary": "Internal Network"
+    },
+    {
+      "name": "Payment Service",
+      "type": "container",
+      "description": "Java microservice processing payments via Stripe, PCI DSS compliant",
+      "trust_boundary": "Internal Network"
+    },
+    {
+      "name": "Product Catalog Service",
+      "type": "serverless_function",
+      "description": "Python FastAPI Lambda serving product data and search",
+      "trust_boundary": "Internal Network"
+    },
+    {
+      "name": "PostgreSQL (RDS)",
+      "type": "database",
+      "description": "Relational database storing orders, users, and transaction data",
+      "trust_boundary": "Data Layer"
+    },
+    {
+      "name": "Redis Cache",
+      "type": "cache",
+      "description": "ElastiCache cluster for session management and product catalog caching",
+      "trust_boundary": "Internal Network"
+    },
+    {
+      "name": "S3 Bucket",
+      "type": "storage",
+      "description": "Object storage for product images and static assets",
+      "trust_boundary": "Internal Network"
+    },
+    {
+      "name": "SQS Queue",
+      "type": "message_queue",
+      "description": "Async message queue for order processing pipeline",
+      "trust_boundary": "Internal Network"
+    }
+  ],
+  "data_flows": [
+    {
+      "source": "React SPA",
+      "target": "CloudFront CDN",
+      "description": "Static asset requests and API calls",
+      "protocol": "HTTPS",
+      "is_encrypted": true
+    },
+    {
+      "source": "CloudFront CDN",
+      "target": "API Gateway",
+      "description": "Proxied API requests with origin authentication",
+      "protocol": "HTTPS",
+      "is_encrypted": true
+    },
+    {
+      "source": "React SPA",
+      "target": "Keycloak",
+      "description": "OAuth2 authorization code flow for user login",
+      "protocol": "HTTPS",
+      "is_encrypted": true
+    },
+    {
+      "source": "API Gateway",
+      "target": "Order Service",
+      "description": "Order CRUD operations with JWT validation",
+      "protocol": "HTTPS",
+      "is_encrypted": true
+    },
+    {
+      "source": "Order Service",
+      "target": "PostgreSQL (RDS)",
+      "description": "Order data persistence and retrieval",
+      "protocol": "TLS/TCP",
+      "is_encrypted": true
+    },
+    {
+      "source": "Order Service",
+      "target": "Payment Service",
+      "description": "Payment initiation requests",
+      "protocol": "gRPC/mTLS",
+      "is_encrypted": true
+    },
+    {
+      "source": "Payment Service",
+      "target": "PostgreSQL (RDS)",
+      "description": "Transaction records and payment status",
+      "protocol": "TLS/TCP",
+      "is_encrypted": true
+    }
+  ],
+  "threats": [
+    {
+      "id": 1,
+      "name": "SQL Injection in Order Service Database Queries",
+      "description": "If the Order Service constructs SQL queries using string concatenation with user-supplied input, an attacker could extract all customer data, modify orders, or drop tables.",
+      "stride_category": "Tampering",
+      "target_asset": "Order Service",
+      "risk_level": "Critical",
+      "impact": "High",
+      "likelihood": "High",
+      "mitigations": [
+        {
+          "description": "Use parameterized queries (prepared statements) for all database operations",
+          "priority": "Immediate"
+        },
+        {
+          "description": "Implement input validation with strict type checking and length limits",
+          "priority": "Immediate"
+        },
+        {
+          "description": "Deploy WAF rule to detect and block SQL injection patterns",
+          "priority": "High"
+        }
+      ],
+      "attack_vector": "Attacker crafts malicious input in order fields that gets interpolated into SQL queries",
+      "cwe_id": "CWE-89"
+    },
+    {
+      "id": 2,
+      "name": "Credential Stuffing Against Keycloak Authentication",
+      "description": "Automated attacks using leaked credential databases could compromise customer accounts, enabling fraudulent orders and payment theft.",
+      "stride_category": "Spoofing",
+      "target_asset": "Keycloak",
+      "risk_level": "Critical",
+      "impact": "High",
+      "likelihood": "High",
+      "mitigations": [
+        {
+          "description": "Implement progressive rate limiting on failed login attempts per IP and per account",
+          "priority": "Immediate"
+        },
+        {
+          "description": "Enable multi-factor authentication (MFA) for all user accounts",
+          "priority": "High"
+        },
+        {
+          "description": "Integrate breached password detection service during registration and login",
+          "priority": "Medium"
+        }
+      ],
+      "attack_vector": "Attacker uses leaked credential databases to attempt automated login",
+      "cwe_id": "CWE-307"
+    },
+    {
+      "id": 3,
+      "name": "JWT Token Manipulation for Privilege Escalation",
+      "description": "If JWT signatures aren't properly validated, an attacker could forge tokens granting admin access to order management and user data.",
+      "stride_category": "Elevation of Privilege",
+      "target_asset": "API Gateway",
+      "risk_level": "High",
+      "impact": "High",
+      "likelihood": "Medium",
+      "mitigations": [
+        {
+          "description": "Validate JWT signatures using RS256 with key rotation on every request",
+          "priority": "Immediate"
+        },
+        {
+          "description": "Implement claim validation (issuer, audience, expiration) in each microservice",
+          "priority": "High"
+        },
+        {
+          "description": "Implement short-lived tokens (5-15 minutes) with refresh token rotation",
+          "priority": "Medium"
+        }
+      ],
+      "attack_vector": "Attacker modifies JWT claims or exploits weak signature validation",
+      "cwe_id": "CWE-287"
+    }
+  ],
+  "assumptions": null,
+  "metadata": {
+    "provider": "bedrock",
+    "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+    "reasoning_level": 0,
+    "timestamp": "2026-05-29T14:32:18.442000+00:00",
+    "image_provided": false
+  }
+}

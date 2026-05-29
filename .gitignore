@@ -27,10 +27,10 @@ Thumbs.db
 .env
 .env.local
 
-# Output files
-threat-model.md
-threat-model.json
-threat-model.pdf
+# Output files (root level only — examples/output/ is tracked)
+/threat-model.md
+/threat-model.json
+/threat-model.pdf
 
 # Testing
 .pytest_cache/
